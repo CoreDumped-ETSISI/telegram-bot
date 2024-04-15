@@ -15,8 +15,8 @@ descrip_comandos = ['el bot comienza a funcionar y da la bienvenida, además de 
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton(text = "BUS E", callback_data = "comandos"),
-               InlineKeyboardButton(text = "CORE ABIERTO?", url =  "https://web.telegram.org/k/#@CoreDumpedUPM"),
+    markup.add(InlineKeyboardButton(text = "BUS E", callback_data = "busE"),
+               InlineKeyboardButton(text = "CORE ABIERTO?", callback_data = "coreAbierto"),
                InlineKeyboardButton(text = "COMANDOS", callback_data = "comandos"),
               InlineKeyboardButton(text = "CONTACTO", url =  "https://web.telegram.org/k/#@CoreDumpedUPM"))
     bot.send_message(message.chat.id, "Eyy, bienvenido al bot personal de Core, que necesitas?", reply_markup=markup)
@@ -30,12 +30,20 @@ def ayuda(message):
     bot.send_message(message.chat.id, "Con que necesitas ayuda, pequeña?", reply_markup=markup)
     
 
-@bot.callback_query_handler(func=lambda call: True)
-def call_back(message):
+@bot.callback_query_handler(func=lambda call:call.data=='comandos' )
+def call_back(call):
     msg  = "COMANDOS: \n\n"
     for comando, descp in zip(comandos, descrip_comandos):
         msg += "/" + comando + ": \t" + descp + "\n"
-    bot.send_message(message.message.chat.id, msg) 
+    bot.send_message(call.message.chat.id, msg) 
+    
+@bot.callback_query_handler(func=lambda call:call.data=='busE' )
+def call_back(call):
+    bot.send_message(call.message.chat.id, "Este comando todavía no ha sido diseñado") 
+    
+@bot.callback_query_handler(func=lambda call:call.data=='coreAbierto' )
+def call_back(call):
+    bot.send_message(call.message.chat.id, "Este comando todavía no ha sido diseñado") 
 
 # EMT BUS E
 @bot.message_handler(commands=['bus'])
@@ -46,7 +54,7 @@ def busE(message):
     bot.send_message(message.chat.id, "Qué Parada quieres consultar?", reply_markup=markup) 
     
         
-#Responde a un mensaje que no es un comando
+# MENSAJE INCORRECTO
 @bot.message_handler(content_types=["text"])
 def comando_erroneo(message):
     if not message.text.startswith("/"):
@@ -64,7 +72,7 @@ def comando_erroneo(message):
 # PUERTA CORE
 
 
-#Main
+# MAIN
 if __name__ == '__main__':
     print('Iniciando el bot')
     bot.infinity_polling()
