@@ -1,8 +1,7 @@
 import telebot
 import requests
 from telebot.types import *
-from constants import TOKEN
-import time
+from constants import TOKEN, EMT_XCLIENTID, EMT_PASSKEY
 
 bot = telebot.TeleBot(TOKEN)
 comandos = ['start', 'ayuda', 'help', 'bus']
@@ -72,8 +71,43 @@ def comando_erroneo(message):
 # PUERTA CORE
 
 
+
+# REQUESTS API EMT
+
+loginUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/login/'
+loginHeader = {'X-ClientId':EMT_XCLIENTID,
+               'passKey':EMT_PASSKEY}
+
+logOutUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/logout/'
+
+
+polideportivoUrl = 'https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/<stopId>/arrives/<lineArrive>/'
+polideportivoParams = {'stopId' : '4281'}
+
+
+
+def getaccessToken(texto):
+    accessToken = login.text.replace('"', '').replace('{','').replace('}', '').replace(' ', '')
+    texto = accessToken.split(",")
+    for a in texto:
+        if ('accessToken' in a):
+            accessToken = a.split(':')[1]
+            return accessToken
 # MAIN
 if __name__ == '__main__':
     print('Iniciando el bot')
+    
+    login = requests.get(loginUrl, headers=loginHeader)
+   
+    EMT_ACCESSTOKEN = getaccessToken(login.text)
+    accessTokenHeader ={'accessToken': EMT_ACCESSTOKEN}
+    
+    busPolideportivo = requests.get(polideportivoUrl, headers=accessTokenHeader, params= polideportivoParams)
+    print(busPolideportivo)
+    
     bot.infinity_polling()
+    
+    logout = requests.get(logOutUrl, headers=accessTokenHeader)
+    
     print('fin')
+    
