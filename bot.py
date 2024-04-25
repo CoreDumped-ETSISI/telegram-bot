@@ -1,4 +1,5 @@
 import telebot
+import json 
 import requests
 from telebot.types import *
 from constants import TOKEN, EMT_XCLIENTID, EMT_PASSKEY
@@ -73,16 +74,26 @@ def comando_erroneo(message):
 
 
 # REQUESTS API EMT
-
 loginUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/login/'
+
 loginHeader = {'X-ClientId':EMT_XCLIENTID,
                'passKey':EMT_PASSKEY}
 
 logOutUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/logout/'
 
 
-polideportivoUrl = 'https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/<stopId>/arrives/<lineArrive>/'
-polideportivoParams = {'stopId' : '4281'}
+polideportivoUrl = 'https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/<stopId>/arrives/all/'
+
+body = {"cultureInfo":"ES",
+        "Text_StopRequired_YN":"Y",
+        "Text_EstimationsRequired_YN":"Y",
+        "Text_IncidencesRequired_YN":"N",
+        "DateTime_Referenced_Incidencies_YYYYMMDD":"20200101"
+        }
+
+polideportivoParams = {'stopId' : '4281',
+                       'Body': json.dumps(body)
+                       }
 
 
 
@@ -100,7 +111,8 @@ if __name__ == '__main__':
     login = requests.get(loginUrl, headers=loginHeader)
    
     EMT_ACCESSTOKEN = getaccessToken(login.text)
-    accessTokenHeader ={'accessToken': EMT_ACCESSTOKEN}
+    accessTokenHeader ={'accessToken': EMT_ACCESSTOKEN,
+                        'content-type': 'application/json'}
     
     busPolideportivo = requests.get(polideportivoUrl, headers=accessTokenHeader, params= polideportivoParams)
     print(busPolideportivo)
