@@ -85,13 +85,14 @@ logOutUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/logout/'
 polideportivoUrl = 'https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/<stopId>/arrives/all/'
 
 body = {"cultureInfo":"ES",
-        "Text_StopRequired_YN":"Y",
+        "Text_StopRequired_YN":"N",
         "Text_EstimationsRequired_YN":"Y",
         "Text_IncidencesRequired_YN":"N",
         "DateTime_Referenced_Incidencies_YYYYMMDD":"20200101"
         }
 
 polideportivoParams = {'stopId' : '4281',
+                       'lineArrive': 'E',
                        'Body': json.dumps(body)
                        }
 
@@ -112,9 +113,12 @@ if __name__ == '__main__':
    
     EMT_ACCESSTOKEN = getaccessToken(login.text)
     accessTokenHeader ={'accessToken': EMT_ACCESSTOKEN,
-                        'content-type': 'application/json'}
+                       'content-type': 'application/json'
+                        }
     
-    busPolideportivo = requests.get(polideportivoUrl, headers=accessTokenHeader, params= polideportivoParams)
+    #print(EMT_ACCESSTOKEN)
+    
+    busPolideportivo = requests.post(polideportivoUrl, headers=accessTokenHeader, params= polideportivoParams)
     print(busPolideportivo)
     
     bot.infinity_polling()
