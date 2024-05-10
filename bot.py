@@ -2,9 +2,14 @@ import telebot
 import json 
 import requests
 from telebot.types import *
-from constants import TOKEN, EMT_XCLIENTID, EMT_PASSKEY
+from constants import TOKEN
+from bs4 import BeautifulSoup
+import re
+
 
 bot = telebot.TeleBot(TOKEN)
+
+
 comandos = ['start', 'ayuda', 'help', 'bus']
 descrip_comandos = ['el bot comienza a funcionar y da la bienvenida, además de un panel con la mayoria de las funcionalidades',
                     'se proporcionan diferentes opciones, como un contacto y la lista de comandos',
@@ -36,10 +41,8 @@ def call_back(call):
     for comando, descp in zip(comandos, descrip_comandos):
         msg += "/" + comando + ": \t" + descp + "\n"
     bot.send_message(call.message.chat.id, msg) 
+     
     
-@bot.callback_query_handler(func=lambda call:call.data=='busE' )
-def call_back(call):
-    bot.send_message(call.message.chat.id, "Este comando todavía no ha sido diseñado") 
     
 @bot.callback_query_handler(func=lambda call:call.data=='coreAbierto' )
 def call_back(call):
@@ -51,9 +54,46 @@ def busE(message):
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton(text = "Conde De Casal", callback_data = "condeCasal"),
               InlineKeyboardButton(text = "Polideportivo UPM", callback_data = "polideportivoUPM"))
-    bot.send_message(message.chat.id, "Qué Parada quieres consultar?", reply_markup=markup) 
+    bot.send_message(message.chat.id, "Qué Parada quieres consultar? \n Este procedimiento puede tardar varios segundos", reply_markup=markup) 
     
-        
+@bot.callback_query_handler(func=lambda call:call.data=='busE' )  # IGUAL QUE COMANDO BUS, PERO PARA EL INLINEKEYBOARD DE START
+def call_back(call):
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton(text = "Conde De Casal", callback_data = "condeCasal"),
+              InlineKeyboardButton(text = "Polideportivo UPM", callback_data = "polideportivoUPM"))
+    bot.send_message(call.message.chat.id, "Qué Parada quieres consultar? \n Este procedimiento puede tardar varios segundos", reply_markup=markup) 
+    
+    
+URL_Polideportivo = 'https://cuantoqueda.com/parada/4281/linea/E/'
+
+@bot.callback_query_handler(func=lambda call:call.data=='polideportivoUPM' )  
+def call_back(call):  
+    polideportivo =  requests.get(URL_Polideportivo).text
+    soup_Poliportivo = BeautifulSoup(polideportivo, "html.parser") 
+    tiempo_Polideportivo = soup_Poliportivo.find_all('p')[3]
+    bot.send_message(call.message.chat.id, tiempo_Polideportivo)
+    
+URL_CondeCasal_E = 'https://cuantoqueda.com/parada/2603/linea/E/'
+URL_CondeCasal_145 = 'https://cuantoqueda.com/parada/2603/linea/145/'
+
+@bot.callback_query_handler(func=lambda call:call.data=='condeCasal' )  
+def call_back(call):  
+    condeCasal_E =  requests.get(URL_CondeCasal_E).text
+    condeCasal_145 =  requests.get(URL_CondeCasal_145).text
+    
+    soup_condeCasal_E = BeautifulSoup(condeCasal_E, "html.parser").find_all('p')[3]
+    soup_condeCasal_145 = BeautifulSoup(condeCasal_145, "html.parser").find_all('p')[3] 
+    
+    tiempo_condeCasal_E = quitar_etiquetas_html(str(soup_condeCasal_E))
+    tiempo_condeCasal_145 = quitar_etiquetas_html(str(soup_condeCasal_145))
+    
+    tiempos_condeCasal = tiempo_condeCasal_E + '\n\n' + tiempo_condeCasal_145
+    bot.send_message(call.message.chat.id, tiempos_condeCasal)
+
+def quitar_etiquetas_html(texto):
+    patron = r"<\/?p[^>]*>"
+    return re.sub(patron, "", texto)
+    
 # MENSAJE INCORRECTO
 @bot.message_handler(content_types=["text"])
 def comando_erroneo(message):
@@ -73,57 +113,12 @@ def comando_erroneo(message):
 
 
 
-# REQUESTS API EMT
-loginUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/login/'
 
-loginHeader = {'X-ClientId':EMT_XCLIENTID,
-               'passKey':EMT_PASSKEY}
-
-logOutUrl = 'https://openapi.emtmadrid.es/v2/mobilitylabs/user/logout/'
-
-
-polideportivoUrl = 'https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/<stopId>/arrives/all/'
-
-body = {"cultureInfo":"ES",
-        "Text_StopRequired_YN":"N",
-        "Text_EstimationsRequired_YN":"Y",
-        "Text_IncidencesRequired_YN":"N",
-        "DateTime_Referenced_Incidencies_YYYYMMDD":"20200101"
-        }
-
-polideportivoParams = {'stopId' : '4281',
-                       'lineArrive': 'E',
-                       'Body': json.dumps(body)
-                       }
-
-
-
-def getaccessToken(texto):
-    accessToken = login.text.replace('"', '').replace('{','').replace('}', '').replace(' ', '')
-    texto = accessToken.split(",")
-    for a in texto:
-        if ('accessToken' in a):
-            accessToken = a.split(':')[1]
-            return accessToken
 # MAIN
 if __name__ == '__main__':
     print('Iniciando el bot')
     
-    login = requests.get(loginUrl, headers=loginHeader)
-   
-    EMT_ACCESSTOKEN = getaccessToken(login.text)
-    accessTokenHeader ={'accessToken': EMT_ACCESSTOKEN,
-                       'content-type': 'application/json'
-                        }
-    
-    #print(EMT_ACCESSTOKEN)
-    
-    busPolideportivo = requests.post(polideportivoUrl, headers=accessTokenHeader, params= polideportivoParams)
-    print(busPolideportivo)
-    
     bot.infinity_polling()
-    
-    logout = requests.get(logOutUrl, headers=accessTokenHeader)
-    
+      
     print('fin')
     
