@@ -70,7 +70,7 @@ URL_Polideportivo = 'https://cuantoqueda.com/parada/4281/linea/E/'
 def call_back(call):  
     polideportivo =  requests.get(URL_Polideportivo).text
     soup_Poliportivo = BeautifulSoup(polideportivo, "html.parser") 
-    tiempo_Polideportivo = soup_Poliportivo.find_all('p')[3]
+    tiempo_Polideportivo = regex(str(soup_Poliportivo.find_all('p')[3]))
     bot.send_message(call.message.chat.id, tiempo_Polideportivo)
     
 URL_CondeCasal_E = 'https://cuantoqueda.com/parada/2603/linea/E/'
@@ -84,15 +84,22 @@ def call_back(call):
     soup_condeCasal_E = BeautifulSoup(condeCasal_E, "html.parser").find_all('p')[3]
     soup_condeCasal_145 = BeautifulSoup(condeCasal_145, "html.parser").find_all('p')[3] 
     
-    tiempo_condeCasal_E = quitar_etiquetas_html(str(soup_condeCasal_E))
-    tiempo_condeCasal_145 = quitar_etiquetas_html(str(soup_condeCasal_145))
+    tiempo_condeCasal_E = regex(str(soup_condeCasal_E))
+    tiempo_condeCasal_145 = regex(str(soup_condeCasal_145))
     
     tiempos_condeCasal = tiempo_condeCasal_E + '\n\n' + tiempo_condeCasal_145
     bot.send_message(call.message.chat.id, tiempos_condeCasal)
 
-def quitar_etiquetas_html(texto):
+def regex(texto):
     patron = r"<\/?p[^>]*>"
-    return re.sub(patron, "", texto)
+    texto = re.sub(patron, "", texto)
+    texto = eliminar_emojis(texto)
+    return texto
+
+
+def eliminar_emojis(cadena):
+    patron = re.compile("✅")
+    return patron.sub(r'', cadena)
     
 # MENSAJE INCORRECTO
 @bot.message_handler(content_types=["text"])
